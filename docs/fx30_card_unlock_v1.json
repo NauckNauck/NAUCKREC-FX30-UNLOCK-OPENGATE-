@@ -1,0 +1,122 @@
+{
+  "design": "fx30_card_unlock_v1",
+  "camera": "ILME-FX30",
+  "firmware": "6.01",
+  "patches": [
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1eb0",
+      "va": "0x47c1eb0",
+      "old": "a602000000001a000500000001001a00",
+      "new": "a602000000001a000000000001001a00",
+      "note": "HAITA rule 0x02a6: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1ec0",
+      "va": "0x47c1ec0",
+      "old": "a702000002001a000500000003001a00",
+      "new": "a702000002001a000000000003001a00",
+      "note": "HAITA rule 0x02a7: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1ed0",
+      "va": "0x47c1ed0",
+      "old": "a802000004001a000500000005001a00",
+      "new": "a802000004001a000000000005001a00",
+      "note": "HAITA rule 0x02a8: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1ee0",
+      "va": "0x47c1ee0",
+      "old": "a902000006001a000500000007001a00",
+      "new": "a902000006001a000000000007001a00",
+      "note": "HAITA rule 0x02a9: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1ef0",
+      "va": "0x47c1ef0",
+      "old": "aa02000008001a000500000009001a00",
+      "new": "aa02000008001a000000000009001a00",
+      "note": "HAITA rule 0x02aa: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1f00",
+      "va": "0x47c1f00",
+      "old": "ab0200000a001a00050000000b001a00",
+      "new": "ab0200000a001a00000000000b001a00",
+      "note": "HAITA rule 0x02ab: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1f10",
+      "va": "0x47c1f10",
+      "old": "ac0200000c001a00050000000d001a00",
+      "new": "ac0200000c001a00000000000d001a00",
+      "note": "HAITA rule 0x02ac: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1f20",
+      "va": "0x47c1f20",
+      "old": "ad0200000e001a00050000000f001a00",
+      "new": "ad0200000e001a00000000000f001a00",
+      "note": "HAITA rule 0x02ad: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1f30",
+      "va": "0x47c1f30",
+      "old": "ae02000010001a000500000011001a00",
+      "new": "ae02000010001a000000000011001a00",
+      "note": "HAITA rule 0x02ae: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "appFw.so",
+      "kind": "haita-rule",
+      "file_off": "0x47c1f40",
+      "va": "0x47c1f40",
+      "old": "af02000012001a000500000013001a00",
+      "new": "af02000012001a000000000013001a00",
+      "note": "HAITA rule 0x02af: change status from 0x05 (Prohibited) to 0x00 (Permitted)",
+      "code": false
+    },
+    {
+      "binary": "libmpr.so",
+      "kind": "recorder-ratecheck",
+      "file_off": "0x103c88",
+      "va": "0x103c88",
+      "old": "ff8309d1001c005304040151fd7bbca9",
+      "new": "5f0000397f0000b9e0031f2ac0035fd6",
+      "note": "RateCheck::GetMediaTransferRateInh: return 0 with isInh=0 and inhBit=0",
+      "code": true
+    }
+  ],
+  "summary": {
+    "total_patches": 11,
+    "appfw_rules": 10,
+    "libmpr_patches": 1
+  }
+}

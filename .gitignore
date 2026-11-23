@@ -1,0 +1,22 @@
+# Never commit Sony proprietary firmware, dumps, backups, or compiled binaries
+*.bin
+*.DAT
+*.dat
+*.tar
+*.img
+*.so
+*.o
+*.elf
+*.MP4
+*.mp4
+*.XML
+*.xml
+
+# Python / OS / Editor
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store
+*.swp
+camera_private/
