@@ -1,0 +1,29 @@
+{
+ "camera": "ILME-FX30",
+ "firmware": "6.01",
+ "dump": "fx30_cp_dump.bin (CP 0xC0000..0x2100000)",
+ "outsz": {
+  "cp_address": "0x155d444",
+  "old": "000f7008",
+  "new": "000f000a",
+  "note": "movie size table, SECOND 3840x2160 entry (unit 0x2d9), same layout/units as A7 IV (0x143c7bc)",
+  "table_start": "0x155d43c"
+ },
+ "dmmwb": {
+  "records": [
+   "0x2080858",
+   "0x208086c",
+   "0x2080880",
+   "0x2080970"
+  ],
+  "grp": 7,
+  "key": "0x57f",
+  "stock_size": "0x1788700",
+  "note": "DMM raw write-buffer records; new size = open-gate rows (needs ogsq readout rows)"
+ },
+ "ogsq": {
+  "status": "not yet found",
+  "sensor": "IMX684",
+  "note": "A7IV IMX710 ogsq addresses do not map; FX30 sensor driver at different cpapp-b.bin offsets"
+ }
+}
