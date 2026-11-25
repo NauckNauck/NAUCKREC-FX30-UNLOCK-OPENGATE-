@@ -58,7 +58,7 @@ def build_tables():
     mpr = FX30_LIBMPR.read_bytes()
     a7og = json.loads(A7IV_JSON.read_text())
 
-    # 1. appFw.so: 1 guard + 10 HAITA V60 rules
+    # 1. appFw.so: 1 guard + 16 HAITA V60 rules (0x02a6..0x02b5)
     appfw_spec = [
         (0x047C1EA0, 16, 0, bytes.fromhex("70020000ae00150005000000ad001500"), b"", "HAITA guard 0x0270"),
         (0x047C1EB0, 16, 1, bytes.fromhex("a602000000001a000500000001001a00"), bytes.fromhex("a602000000001a000000000001001a00"), "HAITA 0x02a6"),
@@ -71,20 +71,30 @@ def build_tables():
         (0x047C1F20, 16, 1, bytes.fromhex("ad0200000e001a00050000000f001a00"), bytes.fromhex("ad0200000e001a00000000000f001a00"), "HAITA 0x02ad"),
         (0x047C1F30, 16, 1, bytes.fromhex("ae02000010001a000500000011001a00"), bytes.fromhex("ae02000010001a000000000011001a00"), "HAITA 0x02ae"),
         (0x047C1F40, 16, 1, bytes.fromhex("af02000012001a000500000013001a00"), bytes.fromhex("af02000012001a000000000013001a00"), "HAITA 0x02af"),
+        (0x047C1F50, 16, 1, bytes.fromhex("b002000014001a000500000015001a00"), bytes.fromhex("b002000014001a000000000015001a00"), "HAITA 0x02b0"),
+        (0x047C1F60, 16, 1, bytes.fromhex("b102000016001a000500000017001a00"), bytes.fromhex("b102000016001a000000000017001a00"), "HAITA 0x02b1"),
+        (0x047C1F70, 16, 1, bytes.fromhex("b202000018001a000500000019001a00"), bytes.fromhex("b202000018001a000000000019001a00"), "HAITA 0x02b2"),
+        (0x047C1F80, 16, 1, bytes.fromhex("b30200001a001a00050000001b001a00"), bytes.fromhex("b30200001a001a00000000001b001a00"), "HAITA 0x02b3"),
+        (0x047C1F90, 16, 1, bytes.fromhex("b40200001c001a00050000001d001a00"), bytes.fromhex("b40200001c001a00000000001d001a00"), "HAITA 0x02b4"),
+        (0x047C1FA0, 16, 1, bytes.fromhex("b50200001e001a00050000001f001a00"), bytes.fromhex("b50200001e001a00000000001f001a00"), "HAITA 0x02b5"),
     ]
     for off, ln, flg, oldb, newb, note in appfw_spec:
         assert appfw[off : off + ln] == oldb, f"appFw mismatch at {hex(off)} ({note})"
 
-    # 2. libmpr.so: 2 guards + 13 patches (V60 RateCheck + AVC + All-I + native MP4 avc1/tkhd/avcC)
+    # 2. libmpr.so: 2 guards + 26 patches (V60 RateCheck + AVC + HEVC XAVC HS + All-I + native MP4 boxes)
     libmpr_spec = [
         (0x00000000, 16, 0, ELF_HEADER_GUARD, b"", "ELF guard"),
         (0x002CB138, 6, 0, bytes.fromhex("00000000000f"), b"", "g_videoParamComb Row0 guard"),
         (0x00103C88, 16, 1, bytes.fromhex("ff8309d1001c005304040151fd7bbca9"), bytes.fromhex("5f0000397f0000b9e0031f2ac0035fd6"), "RateCheck V60 unlock"),
         (0x002CB13E, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "g_videoParamComb Row0 AVC 2160->2560"),
         (0x002CB16E, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "g_videoParamComb Row2 AVC 2160->2560"),
+        (0x002CB1B6, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "g_videoParamComb Row5 HEVC 2160->2560"),
+        (0x002CB1E6, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "g_videoParamComb Row7 HEVC 2160->2560"),
         (0x002CB216, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "g_videoParamComb Row9 All-I 2160->2560"),
         (0x002E0BB6, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "m_vpcSt Row0 AVC 2160->2560"),
         (0x002E0BEE, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "m_vpcSt Row2 AVC 2160->2560"),
+        (0x002E0C42, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "m_vpcSt Row5 HEVC 2160->2560"),
+        (0x002E0C7A, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "m_vpcSt Row7 HEVC 2160->2560"),
         (0x002E0CB2, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), "m_vpcSt Row9 All-I 2160->2560"),
         (0x001164B0, 4, 1, bytes.fromhex("000e8152"), bytes.fromhex("00408152"), "XavcsMovieWriter NRT height 2160->2560"),
         (0x00180098, 4, 1, bytes.fromhex("000e8152"), bytes.fromhex("00408152"), "TransMPFResolution2PubDefinition 2160->2560"),
@@ -96,6 +106,7 @@ def build_tables():
         (0x0017FEB8, 4, 1, bytes.fromhex("3fc02171"), bytes.fromhex("3f002871"), "libmpr 3840x2560 res validator cmp w1,#2560"),
         (0x0021F7BC, 4, 1, bytes.fromhex("3fc02171"), bytes.fromhex("3f002871"), "libXavcMp4 3840x2560 res code cmp w1,#2560"),
         (0x0021FC90, 4, 1, bytes.fromhex("1fc02171"), bytes.fromhex("1f002871"), "libXavcMp4 hvcC level_idc cmp w0,#2560"),
+        (0x0021FD24, 4, 1, bytes.fromhex("c0128052"), bytes.fromhex("20138052"), "libXavcMp4 hvcC level_idc 23.98p Level 5.0->5.1"),
         (0x00226150, 4, 1, bytes.fromhex("010e8152"), bytes.fromhex("01408152"), "libXavcMp4::Rotate alt height mov w1,#2560"),
         (0x00242BE8, 4, 1, bytes.fromhex("3fc02171"), bytes.fromhex("3f002871"), "libXavcMp4 Intra map key 1 cmp w1,#2560"),
         (0x00242CD0, 4, 1, bytes.fromhex("1fc02171"), bytes.fromhex("1f002871"), "libXavcMp4 XAVC S-I CBG map key 2 cmp w0,#2560"),
@@ -155,11 +166,12 @@ def build_tables():
         seen_av.add(fx_off)
         avcam_spec.append((fx_off, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), note))
 
-    # Complete coverage of ALL 86 XAVC S 4K AVC (fmt=4) & XAVC S-I 4K All-Intra (fmt=24)
-    # 3840x2160 rows across 23.98p, 25p, 29.97p, 50p, 59.94p, and S&Q (inp=120),
-    # matched deterministically against the 0x100-byte secondary config table (0x3AAAE8..0x3C1FE8).
+    # Complete coverage of ALL 185 XAVC S 4K AVC (fmt=4), XAVC HS 4K HEVC (fmt=14),
+    # and XAVC S-I 4K All-Intra (fmt=24) 3840x2160 rows across 23.98p, 25p, 29.97p, 50p,
+    # 59.94p, 100p, 119.88p, and S&Q (inp=120), matched deterministically against the
+    # 0x100-byte secondary config table (0x3AAAE8..0x3D6000).
     cfg_map: dict[tuple[int, int], int] = {}
-    for cfg_base in range(0x3AAAE8, 0x3C1FE8, 0x100):
+    for cfg_base in range(0x3AAAE8, 0x3D6000, 0x100):
         c_fmt = struct.unpack_from("<I", av, cfg_base)[0]
         c_id = struct.unpack_from("<I", av, cfg_base + 0x20)[0]
         cfg_map[(c_fmt, c_id)] = cfg_base
@@ -167,18 +179,20 @@ def build_tables():
     for row_idx in range(689):
         r = 0x392758 + row_idx * 0x90
         fmt = struct.unpack_from("<I", av, r)[0]
+        fps = struct.unpack_from("<I", av, r + 0x08)[0]
         w, h = struct.unpack_from("<HH", av, r + 0x7E)
-        if fmt not in (4, 24) or w != 3840 or h != 2160:
+        if fmt not in (4, 14, 24) or w != 3840 or h != 2160:
             continue
         cfg_id = struct.unpack_from("<I", av, r + 0x28)[0]
         assert (fmt, cfg_id) in cfg_map, f"Missing secondary config for fmt={fmt} id={cfg_id}"
         cfg_base = cfg_map[(fmt, cfg_id)]
-        tag = "All-I" if fmt == 24 else "AVC"
+        tag = {4: "AVC", 14: "HEVC", 24: "All-I"}[fmt]
+        last_prof_off = cfg_base + (0x8C if fmt == 14 else 0x90)
         for off, label in (
             (r + 0x80, f"{tag} {cfg_id} desc"),
             (cfg_base + 0x06, f"{tag} {cfg_id} prof +0x06"),
             (cfg_base + 0x38, f"{tag} {cfg_id} prof +0x38"),
-            (cfg_base + 0x90, f"{tag} {cfg_id} prof +0x90"),
+            (last_prof_off, f"{tag} {cfg_id} prof +0x{last_prof_off - cfg_base:02x}"),
         ):
             if off not in seen_av:
                 seen_av.add(off)
@@ -186,9 +200,15 @@ def build_tables():
         if fmt == 24 and (cfg_base + 0x56) not in seen_av:
             seen_av.add(cfg_base + 0x56)
             avcam_spec.append((cfg_base + 0x56, 2, 1, bytes.fromhex("3004"), bytes.fromhex("0005"), f"All-I {cfg_id} 2-core slice split 1072->1280"))
+        if fmt == 14 and av[cfg_base + 0x9E] == 150 and (cfg_base + 0x9E) not in seen_av:
+            seen_av.add(cfg_base + 0x9E)
+            # HEVC Level 5.0 (150) MaxLumaPs=8,912,896 < 3840*2560=9,830,400:
+            # bump to Level 5.1 (153) for 29.97p/50p and Level 5.2 (156) for 59.94p (fps=5).
+            new_lvl = 156 if fps == 5 else 153
+            avcam_spec.append((cfg_base + 0x9E, 1, 1, bytes([150]), bytes([new_lvl]), f"HEVC {cfg_id} fps={fps} level 150->{new_lvl}"))
 
     for off, ln, flg, oldb, newb, note in avcam_spec:
-        assert 0x380000 <= off and off + ln <= 0x3D0000, f"av-cam out of window {hex(off)}"
+        assert 0x380000 <= off and off + ln <= 0x3D6000, f"av-cam out of window {hex(off)}"
         assert av[off : off + ln] == oldb, f"av-cam mismatch at {hex(off)} ({note})"
 
     print(
@@ -348,7 +368,7 @@ static void find_maps(struct map_hit *appfw_rw, struct map_hit *libmpr_rx) {{
           u64 foff = parse_hex(q, &q);
           if (!appfw_rw->found && perms[0] == 'r' && perms[1] == 'w' &&
               line_ends_with(p, nl, "/appFw.so") &&
-              0x047C1EA0UL >= foff && 0x047C1F50UL <= foff + (en - st)) {{
+              0x047C1EA0UL >= foff && 0x047C1FB0UL <= foff + (en - st)) {{
             appfw_rw->start = st;
             appfw_rw->end = en;
             appfw_rw->foff = foff;
@@ -454,7 +474,7 @@ __attribute__((constructor)) static void go(void) {{
   long devmem = -1;
   u8 *av_map = (u8 *)0;
   const u64 av_win_off = 0x380000UL;
-  const u64 av_win_len = 0x050000UL;
+  const u64 av_win_len = 0x056000UL;
 
   if (liro_phys) {{
     if (liro_phys & 0xFFFUL) {{
