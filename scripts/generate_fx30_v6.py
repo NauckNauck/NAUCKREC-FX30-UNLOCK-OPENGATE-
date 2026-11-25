@@ -466,18 +466,11 @@ if __name__ == "__main__":
     emit_u32_helper(
         "fx30_outsz_lcd_v1.c",
         "ol",
-        "SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + LCD 3:2 PREVIEW (10 u32 sites)",
+        "SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + VDF NATIVE 3:2 ASPECT (3 u32 sites, 0% LCD stretch)",
         [
             (0x0155D43C, 0x08700F00, 0x0A000F00, "ISP outsz alt: 3840x2160 -> 3840x2560"),
             (0x0155D444, 0x08700F00, 0x0A000F00, "ISP outsz: 3840x2160 -> 3840x2560"),
-            (0x001E2D38, 0x00000003, 0x00000000, "LCD fit mode panel 0: letterbox -> fill"),
-            (0x001E2D50, 0x00000003, 0x00000000, "LCD fit mode alt: letterbox -> fill"),
-            (0x00DE791C, 0x00260000, 0x00000000, "cpActAfWindow x,y -> (0,0)"),
-            (0x00DE7920, 0x01940280, 0x01E00280, "cpActAfWindow w,h -> (640,480)"),
-            (0x00DE7994, 0x00260000, 0x00000000, "cpActAfWindowRemoteSend x,y -> (0,0)"),
-            (0x00DE7998, 0x01940280, 0x01E00280, "cpActAfWindowRemoteSend w,h -> (640,480)"),
-            (0x00DE7A0C, 0x00260000, 0x00000000, "cpActTrackingFrame x,y -> (0,0)"),
-            (0x00DE7A10, 0x01940280, 0x01E00280, "cpActTrackingFrame w,h -> (640,480)"),
+            (0x006618A4, 0x2002B6C9, 0x2001B6C9, "VDF Movie live aspect 0x6618a6: movs r0, #2 (16:9) -> #1 (3:2)"),
         ],
     )
     emit_u32_helper(
