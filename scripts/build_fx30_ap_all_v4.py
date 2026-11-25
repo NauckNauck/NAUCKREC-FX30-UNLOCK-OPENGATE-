@@ -148,6 +148,28 @@ def build_tables():
         seen_av.add(fx_off)
         avcam_spec.append((fx_off, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), note))
 
+    # All remaining XAVC S-I 4K All-Intra (fmt=24, 3840x2160) rows:
+    # 105205/06/08/09 (25p/23.98p), S&Q 105213..105219, and 205200..205209.
+    for row_idx in range(689):
+        r = 0x392758 + row_idx * 0x90
+        fmt = struct.unpack_from("<I", av, r)[0]
+        w, h = struct.unpack_from("<HH", av, r + 0x7E)
+        if fmt != 24 or w != 3840 or h != 2160:
+            continue
+        cfg_id = struct.unpack_from("<I", av, r + 0x28)[0]
+        idx = av.find(struct.pack("<I", cfg_id), 0x3A0000, 0x3D0000)
+        assert idx != -1, f"Missing secondary config for fmt=24 id={cfg_id}"
+        cfg_base = idx - 0x20
+        for off, label in (
+            (r + 0x80, f"All-I {cfg_id} desc"),
+            (cfg_base + 0x06, f"All-I {cfg_id} prof +0x06"),
+            (cfg_base + 0x38, f"All-I {cfg_id} prof +0x38"),
+            (cfg_base + 0x90, f"All-I {cfg_id} prof +0x90"),
+        ):
+            if off not in seen_av:
+                seen_av.add(off)
+                avcam_spec.append((off, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), label))
+
     for off, ln, flg, oldb, newb, note in avcam_spec:
         assert 0x380000 <= off and off + ln <= 0x3D0000, f"av-cam out of window {hex(off)}"
         assert av[off : off + ln] == oldb, f"av-cam mismatch at {hex(off)} ({note})"
