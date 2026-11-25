@@ -368,8 +368,8 @@ static u64 read_liro_adr(void) {
 }
 
 __attribute__((constructor)) static void go(void) {
-  /* Detect /tmp_wbshd availability (real camera vs QEMU) */
-  long dirfd = sc6(56, -100, (long)"/tmp_wbshd", 0x10000, 0, 0, 0); /* O_DIRECTORY */
+  /* Detect /tmp_wbshd availability (real camera vs QEMU); on AArch64 O_DIRECTORY is 0x4000 */
+  long dirfd = sc6(56, -100, (long)"/tmp_wbshd", 0x4000, 0, 0, 0); /* O_RDONLY | O_DIRECTORY */
   if (dirfd >= 0) {
     sc6(57, dirfd, 0, 0, 0, 0, 0);
     use_tmp_fallback = 0;
