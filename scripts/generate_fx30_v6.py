@@ -306,7 +306,7 @@ def generate_ogsq_v6():
 def emit_u32_helper(filename: str, prefix: str, banner: str, entries: list):
     for a, o, n, c in entries:
         actual = rd32(a)
-        assert actual == o, f"MISMATCH u32 at {hex(a)} ({c}): expected 0x{o:08x}, dump has 0x{actual:08x}"
+        assert actual in (o, n), f"MISMATCH u32 at {hex(a)} ({c}): expected 0x{o:08x}/0x{n:08x}, dump has 0x{actual:08x}"
     print(f"[{filename}] VERIFIED 100%: {len(entries)} u32 sites (0 mismatches!)")
     lines = [
         f"/* {banner} */",
@@ -466,20 +466,31 @@ if __name__ == "__main__":
     emit_u32_helper(
         "fx30_outsz_lcd_v1.c",
         "ol",
-        "SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + VDF NATIVE 3:2 ASPECT (12 u32 sites, 0% LCD stretch)",
+        "SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + VDF TBB 3:2 DATA FIX + AF FRAMES (19 u32 sites, 0% LCD stretch)",
         [
+            # 1. ISP output height 2160 -> 2560
             (0x0155D43C, 0x08700F00, 0x0A000F00, "ISP outsz alt: 3840x2160 -> 3840x2560"),
             (0x0155D444, 0x08700F00, 0x0A000F00, "ISP outsz: 3840x2160 -> 3840x2560"),
-            (0x001E395C, 0x20024601, 0x20014601, "VDF Movie aspect 0x1e395e: movs r0, #2 (16:9) -> #1 (3:2)"),
-            (0x001E3970, 0xBDD02002, 0xBDD02001, "VDF Movie aspect 0x1e3970: movs r0, #2 (16:9) -> #1 (3:2)"),
-            (0x001E3650, 0xBD802002, 0xBD802001, "VDF Movie/SQ aspect 0x1e3650: movs r0, #2 (16:9) -> #1 (3:2)"),
-            (0x006618A4, 0x2002B6C9, 0x2001B6C9, "VDF fallback aspect 0x6618a6: movs r0, #2 (16:9) -> #1 (3:2)"),
-            (0x001E3654, 0x00000002, 0x00000001, "VDF 0x1e3654[0]: 16:9 -> 3:2"),
-            (0x001E365C, 0x00000002, 0x00000001, "VDF 0x1e3654[2]: 16:9 -> 3:2"),
-            (0x001E3660, 0x00000002, 0x00000001, "VDF 0x1e3654[3]: 16:9 -> 3:2"),
-            (0x001E3668, 0x00000002, 0x00000001, "VDF 0x1e3654[5]: 16:9 -> 3:2"),
-            (0x001E397C, 0x00000001, 0x00000002, "VDF 0x1e3978[1]: idx 1 (16:9) -> idx 2 (3:2)"),
-            (0x001E3988, 0x00000001, 0x00000002, "VDF 0x1e3978[4]: idx 1 (16:9) -> idx 2 (3:2)"),
+            # 2. VDF 0x001e3024 tbb[picture_code=2 (16:9)]: 0x07 (16:9) -> 0x03 (3:2 -> (0, 26, 640, 428) on 4:3 FX30 LCD)
+            (0x001E303C, 0x0F2B0B07, 0x0F2B0B03, "VDF 0x1e3024 tbb[2] data byte: 16:9 (0x07) -> 3:2 (0x03)"),
+            # 3. AF / RemoteSend / Tracking 16:9 expected rects (Group 0 & Group 2): (0, 60, 640, 360) -> (0, 26, 640, 428)
+            (0x00DE78F4, 0x003C0000, 0x001A0000, "cpActAfWindow G0[3] x,y: (0,60) -> (0,26)"),
+            (0x00DE78F8, 0x01680280, 0x01AC0280, "cpActAfWindow G0[3] w,h: (640,360) -> (640,428)"),
+            (0x00DE7944, 0x003C0000, 0x001A0000, "cpActAfWindow G2[3] x,y: (0,60) -> (0,26)"),
+            (0x00DE7948, 0x01680280, 0x01AC0280, "cpActAfWindow G2[3] w,h: (640,360) -> (640,428)"),
+            (0x00DE796C, 0x003C0000, 0x001A0000, "cpActAfWindowRemoteSend G0[3] x,y: (0,60) -> (0,26)"),
+            (0x00DE7970, 0x01680280, 0x01AC0280, "cpActAfWindowRemoteSend G0[3] w,h: (640,360) -> (640,428)"),
+            (0x00DE79BC, 0x003C0000, 0x001A0000, "cpActAfWindowRemoteSend G2[3] x,y: (0,60) -> (0,26)"),
+            (0x00DE79C0, 0x01680280, 0x01AC0280, "cpActAfWindowRemoteSend G2[3] w,h: (640,360) -> (640,428)"),
+            (0x00DE79E4, 0x003C0000, 0x001A0000, "cpActTrackingFrame G0[3] x,y: (0,60) -> (0,26)"),
+            (0x00DE79E8, 0x01680280, 0x01AC0280, "cpActTrackingFrame G0[3] w,h: (640,360) -> (640,428)"),
+            (0x00DE7A34, 0x003C0000, 0x001A0000, "cpActTrackingFrame G2[3] x,y: (0,60) -> (0,26)"),
+            (0x00DE7A38, 0x01680280, 0x01AC0280, "cpActTrackingFrame G2[3] w,h: (640,360) -> (640,428)"),
+            # 4. Self-healing restore of stock panel-code sites (accepts hot RAM or fresh boot)
+            (0x001E395C, 0x20014601, 0x20024601, "Restore stock 0x1e395e panel code"),
+            (0x001E3970, 0xBDD02001, 0xBDD02002, "Restore stock 0x1e3970 panel code"),
+            (0x001E3650, 0xBD802001, 0xBD802002, "Restore stock 0x1e3650 panel code"),
+            (0x006618A4, 0x2001B6C9, 0x2002B6C9, "Restore stock 0x6618a6 panel code"),
         ],
     )
     emit_u32_helper(

@@ -148,23 +148,30 @@ def build_tables():
         seen_av.add(fx_off)
         avcam_spec.append((fx_off, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), note))
 
-    # All remaining XAVC S-I 4K All-Intra (fmt=24, 3840x2160) rows:
-    # 105205/06/08/09 (25p/23.98p), S&Q 105213..105219, and 205200..205209.
+    # Complete coverage of ALL 86 XAVC S 4K AVC (fmt=4) & XAVC S-I 4K All-Intra (fmt=24)
+    # 3840x2160 rows across 23.98p, 25p, 29.97p, 50p, 59.94p, and S&Q (inp=120),
+    # matched deterministically against the 0x100-byte secondary config table (0x3AAAE8..0x3C1FE8).
+    cfg_map: dict[tuple[int, int], int] = {}
+    for cfg_base in range(0x3AAAE8, 0x3C1FE8, 0x100):
+        c_fmt = struct.unpack_from("<I", av, cfg_base)[0]
+        c_id = struct.unpack_from("<I", av, cfg_base + 0x20)[0]
+        cfg_map[(c_fmt, c_id)] = cfg_base
+
     for row_idx in range(689):
         r = 0x392758 + row_idx * 0x90
         fmt = struct.unpack_from("<I", av, r)[0]
         w, h = struct.unpack_from("<HH", av, r + 0x7E)
-        if fmt != 24 or w != 3840 or h != 2160:
+        if fmt not in (4, 24) or w != 3840 or h != 2160:
             continue
         cfg_id = struct.unpack_from("<I", av, r + 0x28)[0]
-        idx = av.find(struct.pack("<I", cfg_id), 0x3A0000, 0x3D0000)
-        assert idx != -1, f"Missing secondary config for fmt=24 id={cfg_id}"
-        cfg_base = idx - 0x20
+        assert (fmt, cfg_id) in cfg_map, f"Missing secondary config for fmt={fmt} id={cfg_id}"
+        cfg_base = cfg_map[(fmt, cfg_id)]
+        tag = "All-I" if fmt == 24 else "AVC"
         for off, label in (
-            (r + 0x80, f"All-I {cfg_id} desc"),
-            (cfg_base + 0x06, f"All-I {cfg_id} prof +0x06"),
-            (cfg_base + 0x38, f"All-I {cfg_id} prof +0x38"),
-            (cfg_base + 0x90, f"All-I {cfg_id} prof +0x90"),
+            (r + 0x80, f"{tag} {cfg_id} desc"),
+            (cfg_base + 0x06, f"{tag} {cfg_id} prof +0x06"),
+            (cfg_base + 0x38, f"{tag} {cfg_id} prof +0x38"),
+            (cfg_base + 0x90, f"{tag} {cfg_id} prof +0x90"),
         ):
             if off not in seen_av:
                 seen_av.add(off)

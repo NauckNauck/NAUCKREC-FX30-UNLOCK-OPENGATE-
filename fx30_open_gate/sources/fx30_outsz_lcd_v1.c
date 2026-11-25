@@ -1,4 +1,4 @@
-/* SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + VDF NATIVE 3:2 ASPECT (12 u32 sites, 0% LCD stretch) */
+/* SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + VDF TBB 3:2 DATA FIX + AF FRAMES (19 u32 sites, 0% LCD stretch) */
 typedef unsigned long u64; typedef long i64; typedef unsigned int u32; typedef unsigned short u16; typedef unsigned char u8;
 extern u64 cam_dmm_alloc(u32 size, u32 *handle) __asm__("_Z9dmm_allocjPj");
 extern u64 cam_dmm_free(u32 handle) __asm__("_Z8dmm_freej");
@@ -14,16 +14,23 @@ struct p32_entry { u32 addr; u32 oldv; u32 newv; };
 static const struct p32_entry P32[] = {
   {0x0155d43cUL, 0x08700f00UL, 0x0a000f00UL}, /* ISP outsz alt: 3840x2160 -> 3840x2560 */
   {0x0155d444UL, 0x08700f00UL, 0x0a000f00UL}, /* ISP outsz: 3840x2160 -> 3840x2560 */
-  {0x001e395cUL, 0x20024601UL, 0x20014601UL}, /* VDF Movie aspect 0x1e395e: movs r0, #2 (16:9) -> #1 (3:2) */
-  {0x001e3970UL, 0xbdd02002UL, 0xbdd02001UL}, /* VDF Movie aspect 0x1e3970: movs r0, #2 (16:9) -> #1 (3:2) */
-  {0x001e3650UL, 0xbd802002UL, 0xbd802001UL}, /* VDF Movie/SQ aspect 0x1e3650: movs r0, #2 (16:9) -> #1 (3:2) */
-  {0x006618a4UL, 0x2002b6c9UL, 0x2001b6c9UL}, /* VDF fallback aspect 0x6618a6: movs r0, #2 (16:9) -> #1 (3:2) */
-  {0x001e3654UL, 0x00000002UL, 0x00000001UL}, /* VDF 0x1e3654[0]: 16:9 -> 3:2 */
-  {0x001e365cUL, 0x00000002UL, 0x00000001UL}, /* VDF 0x1e3654[2]: 16:9 -> 3:2 */
-  {0x001e3660UL, 0x00000002UL, 0x00000001UL}, /* VDF 0x1e3654[3]: 16:9 -> 3:2 */
-  {0x001e3668UL, 0x00000002UL, 0x00000001UL}, /* VDF 0x1e3654[5]: 16:9 -> 3:2 */
-  {0x001e397cUL, 0x00000001UL, 0x00000002UL}, /* VDF 0x1e3978[1]: idx 1 (16:9) -> idx 2 (3:2) */
-  {0x001e3988UL, 0x00000001UL, 0x00000002UL}, /* VDF 0x1e3978[4]: idx 1 (16:9) -> idx 2 (3:2) */
+  {0x001e303cUL, 0x0f2b0b07UL, 0x0f2b0b03UL}, /* VDF 0x1e3024 tbb[2] data byte: 16:9 (0x07) -> 3:2 (0x03) */
+  {0x00de78f4UL, 0x003c0000UL, 0x001a0000UL}, /* cpActAfWindow G0[3] x,y: (0,60) -> (0,26) */
+  {0x00de78f8UL, 0x01680280UL, 0x01ac0280UL}, /* cpActAfWindow G0[3] w,h: (640,360) -> (640,428) */
+  {0x00de7944UL, 0x003c0000UL, 0x001a0000UL}, /* cpActAfWindow G2[3] x,y: (0,60) -> (0,26) */
+  {0x00de7948UL, 0x01680280UL, 0x01ac0280UL}, /* cpActAfWindow G2[3] w,h: (640,360) -> (640,428) */
+  {0x00de796cUL, 0x003c0000UL, 0x001a0000UL}, /* cpActAfWindowRemoteSend G0[3] x,y: (0,60) -> (0,26) */
+  {0x00de7970UL, 0x01680280UL, 0x01ac0280UL}, /* cpActAfWindowRemoteSend G0[3] w,h: (640,360) -> (640,428) */
+  {0x00de79bcUL, 0x003c0000UL, 0x001a0000UL}, /* cpActAfWindowRemoteSend G2[3] x,y: (0,60) -> (0,26) */
+  {0x00de79c0UL, 0x01680280UL, 0x01ac0280UL}, /* cpActAfWindowRemoteSend G2[3] w,h: (640,360) -> (640,428) */
+  {0x00de79e4UL, 0x003c0000UL, 0x001a0000UL}, /* cpActTrackingFrame G0[3] x,y: (0,60) -> (0,26) */
+  {0x00de79e8UL, 0x01680280UL, 0x01ac0280UL}, /* cpActTrackingFrame G0[3] w,h: (640,360) -> (640,428) */
+  {0x00de7a34UL, 0x003c0000UL, 0x001a0000UL}, /* cpActTrackingFrame G2[3] x,y: (0,60) -> (0,26) */
+  {0x00de7a38UL, 0x01680280UL, 0x01ac0280UL}, /* cpActTrackingFrame G2[3] w,h: (640,360) -> (640,428) */
+  {0x001e395cUL, 0x20014601UL, 0x20024601UL}, /* Restore stock 0x1e395e panel code */
+  {0x001e3970UL, 0xbdd02001UL, 0xbdd02002UL}, /* Restore stock 0x1e3970 panel code */
+  {0x001e3650UL, 0xbd802001UL, 0xbd802002UL}, /* Restore stock 0x1e3650 panel code */
+  {0x006618a4UL, 0x2001b6c9UL, 0x2002b6c9UL}, /* Restore stock 0x6618a6 panel code */
 };
 #define NP32 (sizeof(P32)/sizeof(P32[0]))
 __attribute__((constructor)) static void go(void){
