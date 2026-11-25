@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Unified Sony FX30 (FW 6.01 / IMX684) Volatile RAM Runner:
+  --fast            1-USB-SESSION ALL-IN-ONE: fx30_ap_all_v4 (V60 + AVC/All-I + native MP4 2560) + fx30_ogsq_v6 + fx30_outsz_lcd_v1
   --step1           V60 Card Unlock (fx30menu_v1 + fx30rate_v1) + fx30_ogsq_v6.so
-  --full            V60 Card Unlock + fx30og_v3 (110 av-cam + 7 libmpr sites) + fx30_ogsq_v6 + fx30_outsz_lcd_v1
+  --full            Legacy 4-session flow: V60 + fx30og_v3 + fx30_ogsq_v6 + fx30_outsz_lcd_v1
   --with-dmmwb      Also inject fx30_dmmwb_safe_v2.so (contingency 2x28.5MB steered DMM)
   --probe           Run fx30_read_probe_v2.so (in Movie mode -> IMG INIT cure) & decode probe_dump.bin
   --card-only       Run V60 Card Unlock only (fx30menu_v1 + fx30rate_v1)
-  --verify-offline  Verify SHA-256 & ELF integrity of all 7 binaries without camera connected
+  --verify-offline  Verify SHA-256 & ELF integrity of all 8 binaries without camera connected
 """
 import argparse
 import hashlib
@@ -35,6 +36,7 @@ AP_STEPS = {
     "fx30og_v3":   (19, HELPER_DIR / "libJit_level19_fx30og_v3.so",   "1b63fdfff3f32307c376789fd25bec1e570e444348c72298d1abde903f65ec0b"),
 }
 CP_BINS = {
+    "fx30_ap_all_v4":     OG_DIR / "fx30_ap_all_v4.so",
     "fx30_ogsq_v6":       OG_DIR / "fx30_ogsq_v6.so",
     "fx30_outsz_lcd_v1":  OG_DIR / "fx30_outsz_lcd_v1.so",
     "fx30_dmmwb_safe_v2": OG_DIR / "fx30_dmmwb_safe_v2.so",
@@ -46,7 +48,7 @@ LIB_PATH = b"/tmp/jiritsu/libJit.so"
 
 
 def verify_offline() -> int:
-    print("=== OFFLINE INTEGRITY CHECK (7 BINARIES) ===")
+    print("=== OFFLINE INTEGRITY CHECK (8 BINARIES) ===")
     ok = True
     for name, (lvl, path, expected_sha) in AP_STEPS.items():
         if not path.is_file():
@@ -65,10 +67,11 @@ def verify_offline() -> int:
             continue
         raw = path.read_bytes()
         is_elf = raw[:4] == b"\x7fELF" and raw[4] == 2 and struct.unpack_from("<H", raw, 18)[0] == 183
-        has_sencore = b"libsencore.so" in raw
+        needs_sencore = (name != "fx30_ap_all_v4")
+        has_sencore = (b"libsencore.so" in raw) if needs_sencore else True
         has_init = b".init_array" in raw
         good = is_elf and has_sencore and has_init
-        print(f"  [{'OK' if good else 'BAD ELF'}] {name:18s} ({len(raw)} B) aarch64={is_elf} libsencore={has_sencore} init_array={has_init}")
+        print(f"  [{'OK' if good else 'BAD ELF'}] {name:18s} ({len(raw)} B) aarch64={is_elf} libsencore={has_sencore if needs_sencore else 'n/a'} init_array={has_init}")
         if not good:
             ok = False
     return 0 if ok else 1
@@ -182,7 +185,17 @@ def inject_cp_helpers(helpers: list, dump_out: Path = None):
                 cmd(cam, SET_FILE_PATH, b"\x00" + LIB_PATH)
                 st, _ = cmd(cam, SET_FILE2, b"\x00\xff\x00" + so_path.read_bytes())
                 print(f"  write/load status: {st}")
-                time.sleep(3)
+                done_mk = next((m for m in markers if m.endswith(b"_done")), None)
+                deadline = time.time() + 4.0
+                if done_mk:
+                    while time.time() < deadline:
+                        time.sleep(0.2)
+                        cmd(cam, SET_FILE_PATH, b"\x00" + done_mk)
+                        dst_ck, _ = cmd(cam, GET_FILE2, b"\x00\xff\x00")
+                        if dst_ck == 0:
+                            break
+                else:
+                    time.sleep(2.5)
                 for mk in markers:
                     cmd(cam, SET_FILE_PATH, b"\x00" + mk)
                     mst, md = cmd(cam, GET_FILE2, b"\x00\xff\x00")
@@ -228,6 +241,7 @@ def main():
     ap = argparse.ArgumentParser()
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument("--verify-offline", action="store_true")
+    g.add_argument("--fast", action="store_true")
     g.add_argument("--card-only", action="store_true")
     g.add_argument("--step1", action="store_true")
     g.add_argument("--full", action="store_true")
@@ -240,6 +254,23 @@ def main():
 
     if verify_offline() != 0:
         raise SystemExit("Offline integrity check failed!")
+
+    if args.fast:
+        wait_for_drive(True, "STILLS (Photo)")
+        fast_queue = [
+            ("fx30_ap_all_v4", CP_BINS["fx30_ap_all_v4"],
+             [b"../../tmp_wbshd/ap_start", b"../../tmp_wbshd/ap_ok", b"../../tmp_wbshd/ap_mismatch", b"../../tmp_wbshd/ap_bad", b"../../tmp_wbshd/ap_done"]),
+            ("fx30_ogsq_v6", CP_BINS["fx30_ogsq_v6"],
+             [b"../../tmp_wbshd/v6_start", b"../../tmp_wbshd/v6_ok", b"../../tmp_wbshd/v6_mismatch", b"../../tmp_wbshd/v6_bad", b"../../tmp_wbshd/v6_done"]),
+            ("fx30_outsz_lcd_v1", CP_BINS["fx30_outsz_lcd_v1"],
+             [b"../../tmp_wbshd/ol_start", b"../../tmp_wbshd/ol_ok", b"../../tmp_wbshd/ol_mismatch", b"../../tmp_wbshd/ol_bad", b"../../tmp_wbshd/ol_done"]),
+        ]
+        if args.with_dmmwb:
+            fast_queue.append(("fx30_dmmwb_safe_v2", CP_BINS["fx30_dmmwb_safe_v2"],
+                               [b"../../tmp_wbshd/dm_start", b"../../tmp_wbshd/dm_ok", b"../../tmp_wbshd/dm_mismatch", b"../../tmp_wbshd/dm_bad", b"../../tmp_wbshd/dm_done"]))
+        inject_cp_helpers(fast_queue)
+        print("\n>>> FAST ALL-IN-ONE DONE (1 USB session)! Unplug USB-C, switch MODE -> Movie, and shoot Open Gate 3:2!")
+        return
 
     if args.probe:
         wait_for_drive(True, "MOVIE MODE (Video)")

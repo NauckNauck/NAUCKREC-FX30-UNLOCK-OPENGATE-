@@ -4,16 +4,18 @@ PY="/Users/nauck/Documents/sony_research/a7iv-open-gate-test/macos/.venv/bin/pyt
 echo "================================================================"
 echo "  SONY FX30 (FW 6.01) — V60 CARD UNLOCK + OPEN GATE 3:2"
 echo "================================================================"
-echo "1) Step 1 Isolado (V60 Unlock + fx30_ogsq_v6 Squeezed)"
-echo "2) Full Open Gate 3:2 3840x2560 (V60 + fx30og_v3 + v6 + outsz/LCD)"
-echo "3) Cura USB em Movie + Read-Probe (--probe)"
-echo "4) Apenas V60 Card Unlock (--card-only)"
-read -r -p "Escolha [1/2/3/4]: " choice
+echo "1) FAST 1-USB All-in-One (V60 + AVC/All-I + Native MP4 2560 + v6 + LCD)"
+echo "2) Legacy 4-USB Full Open Gate (V60 + fx30og_v3 + v6 + outsz/LCD)"
+echo "3) Step 1 Isolado (V60 Unlock + fx30_ogsq_v6 Squeezed)"
+echo "4) Cura USB em Movie + Read-Probe (--probe)"
+echo "5) Apenas V60 Card Unlock (--card-only)"
+read -r -p "Escolha [1/2/3/4/5]: " choice
 case "$choice" in
-  1) FLAG="--step1" ;;
+  1) FLAG="--fast" ;;
   2) FLAG="--full" ;;
-  3) FLAG="--probe" ;;
-  4) FLAG="--card-only" ;;
+  3) FLAG="--step1" ;;
+  4) FLAG="--probe" ;;
+  5) FLAG="--card-only" ;;
   *) echo "Opcao invalida."; exit 1 ;;
 esac
 sudo "$PY" -I -B "$PWD/run_fx30_complete.py" "$FLAG"

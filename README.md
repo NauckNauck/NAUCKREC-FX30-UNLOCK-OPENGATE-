@@ -23,7 +23,8 @@
 
 - **Sensor / SGC (`fx30_open_gate/sources/fx30_ogsq_v6.c`, `scripts/generate_fx30_v6.py`):** Full 3:2 IMX684 readout (`5952x3968`), `CROPV = 96`, `Lrc_hscale` (`0x786`) kept at stock `5623`, `Lrc_vphase` (`0x78c`) = `3726`, `PDAF_OFFS` (`+14`), `PDAF_END_OFFS` (`+634`), `TG_Node10` (`0x30` == `S9`), `0x49c/0x4ac/0x4bc` (`+310`), `DrvM* vratio = 27/32`.
 - **ISP `outsz` & LCD (`fx30_open_gate/sources/fx30_outsz_lcd_v1.c`):** ISP `outsz` (`0x0155d43c`, `0x0155d444`: `3840x2160 -> 3840x2560`) + VDF/AF table sites (`10 u32` writes).
-- **AP Encoder (`scripts/build_fx30og_v3.py`):** Builds `libJit_level19_fx30og_v3.so` (`110` `av-cam.bin` patches + `7` `libmpr.so` patches).
+- **Unified AP Helper (`scripts/build_fx30_ap_all_v4.py`, `fx30_open_gate/sources/fx30_ap_all_v4.c`):** Single zero-dependency AArch64 `.so` (`13.7 KB`) applying **all AP patches in 1 USB session** — V60 HAITA (`10` rules), V60 `RateCheck`, AVC Long-GOP + **XAVC S-I All-Intra** (`Row 9` + `105200/01/04/07`), and native `libXavcMp4` `avc1`/`tkhd`/`avcC` `3840x2560` headers (`0x21ff68`, `0x21fb34`, `0x2200a0`, `0x2263bc`, `0x180098`, `0x109768`). Runtime-verified on ARM64 Linux against FX30 6.01 `appFw.so` & `libmpr.so`.
+- **Legacy AP Encoder (`scripts/build_fx30og_v3.py`):** Builds `libJit_level19_fx30og_v3.so` (`110` `av-cam.bin` patches + `7` `libmpr.so` patches).
 - **V60 Card Unlock (`scripts/build_fx30_helpers.py`):** Builds `libJit_level19_fx30menu_v1.so` + `libJit_level19_fx30rate_v1.so`.
 - **Steered DMM Contingency (`fx30_open_gate/sources/fx30_dmmwb_safe_v2.c`):** Safe `71 MiB` `0x6fa` allocation steering (`2x28.5 MB + 1 MB -> 0x8fe`).
 - **MP4 Box Fixer (`scripts/fix_mp4_2560.py`):** Fixes `avc1`/`tkhd` boxes on recorded `.MP4` clips in place without re-encoding.
@@ -33,12 +34,15 @@
 ## Quick Usage
 
 ```bash
-# 1. Verify all 7 compiled AP/CP binaries offline
+# 1. Verify all 8 compiled AP/CP binaries offline
 python3 fx30_open_gate/run_fx30_complete.py --verify-offline
 
-# 2. Apply full Open Gate (3840x2560) + LCD + V60 Unlock (requires sudo on macOS for MSC detach)
+# 2. FAST 1-USB All-in-One: V60 + Open Gate 3:2 (AVC + All-I + native MP4 2560) + LCD (~5s, single USB session!)
+sudo python3 -I -B fx30_open_gate/run_fx30_complete.py --fast
+
+# 3. Legacy 4-USB flow (if needed)
 sudo python3 -I -B fx30_open_gate/run_fx30_complete.py --full --with-dmmwb
 
-# 3. Fix MP4 container avc1/tkhd metadata on recorded clips (if muxer wrote 3840x2160)
+# 4. Fix MP4 container avc1/tkhd metadata on older recorded clips (lossless)
 python3 scripts/fix_mp4_2560.py /path/to/clips/
 ```
