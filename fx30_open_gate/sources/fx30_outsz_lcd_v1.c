@@ -1,4 +1,4 @@
-/* SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + VDF NATIVE 3:2 ASPECT (3 u32 sites, 0% LCD stretch) */
+/* SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + VDF NATIVE 3:2 ASPECT (6 u32 sites, 0% LCD stretch) */
 typedef unsigned long u64; typedef long i64; typedef unsigned int u32; typedef unsigned short u16; typedef unsigned char u8;
 extern u64 cam_dmm_alloc(u32 size, u32 *handle) __asm__("_Z9dmm_allocjPj");
 extern u64 cam_dmm_free(u32 handle) __asm__("_Z8dmm_freej");
@@ -14,7 +14,10 @@ struct p32_entry { u32 addr; u32 oldv; u32 newv; };
 static const struct p32_entry P32[] = {
   {0x0155d43cUL, 0x08700f00UL, 0x0a000f00UL}, /* ISP outsz alt: 3840x2160 -> 3840x2560 */
   {0x0155d444UL, 0x08700f00UL, 0x0a000f00UL}, /* ISP outsz: 3840x2160 -> 3840x2560 */
-  {0x006618a4UL, 0x2002b6c9UL, 0x2001b6c9UL}, /* VDF Movie live aspect 0x6618a6: movs r0, #2 (16:9) -> #1 (3:2) */
+  {0x001e395cUL, 0x20024601UL, 0x20014601UL}, /* VDF Movie aspect 0x1e395e: movs r0, #2 (16:9) -> #1 (3:2) */
+  {0x001e3970UL, 0xbdd02002UL, 0xbdd02001UL}, /* VDF Movie aspect 0x1e3970: movs r0, #2 (16:9) -> #1 (3:2) */
+  {0x001e3650UL, 0xbd802002UL, 0xbd802001UL}, /* VDF Movie/SQ aspect 0x1e3650: movs r0, #2 (16:9) -> #1 (3:2) */
+  {0x006618a4UL, 0x2002b6c9UL, 0x2001b6c9UL}, /* VDF fallback aspect 0x6618a6: movs r0, #2 (16:9) -> #1 (3:2) */
 };
 #define NP32 (sizeof(P32)/sizeof(P32[0]))
 __attribute__((constructor)) static void go(void){

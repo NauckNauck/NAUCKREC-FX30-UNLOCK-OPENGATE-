@@ -466,11 +466,14 @@ if __name__ == "__main__":
     emit_u32_helper(
         "fx30_outsz_lcd_v1.c",
         "ol",
-        "SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + VDF NATIVE 3:2 ASPECT (3 u32 sites, 0% LCD stretch)",
+        "SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + VDF NATIVE 3:2 ASPECT (6 u32 sites, 0% LCD stretch)",
         [
             (0x0155D43C, 0x08700F00, 0x0A000F00, "ISP outsz alt: 3840x2160 -> 3840x2560"),
             (0x0155D444, 0x08700F00, 0x0A000F00, "ISP outsz: 3840x2160 -> 3840x2560"),
-            (0x006618A4, 0x2002B6C9, 0x2001B6C9, "VDF Movie live aspect 0x6618a6: movs r0, #2 (16:9) -> #1 (3:2)"),
+            (0x001E395C, 0x20024601, 0x20014601, "VDF Movie aspect 0x1e395e: movs r0, #2 (16:9) -> #1 (3:2)"),
+            (0x001E3970, 0xBDD02002, 0xBDD02001, "VDF Movie aspect 0x1e3970: movs r0, #2 (16:9) -> #1 (3:2)"),
+            (0x001E3650, 0xBD802002, 0xBD802001, "VDF Movie/SQ aspect 0x1e3650: movs r0, #2 (16:9) -> #1 (3:2)"),
+            (0x006618A4, 0x2002B6C9, 0x2001B6C9, "VDF fallback aspect 0x6618a6: movs r0, #2 (16:9) -> #1 (3:2)"),
         ],
     )
     emit_u32_helper(
