@@ -93,6 +93,13 @@ def build_tables():
         (0x0021FB34, 4, 1, bytes.fromhex("1fc02171"), bytes.fromhex("1f002871"), "libXavcMp4 avcC level_idc cmp w0,#2560"),
         (0x002200A0, 4, 1, bytes.fromhex("060e8152"), bytes.fromhex("06408152"), "libXavcMp4 hvc1 track height mov w6,#2560"),
         (0x002263BC, 4, 1, bytes.fromhex("010e8152"), bytes.fromhex("01408152"), "libXavcMp4::Rotate avc1 height mov w1,#2560"),
+        (0x0017FEB8, 4, 1, bytes.fromhex("3fc02171"), bytes.fromhex("3f002871"), "libmpr 3840x2560 res validator cmp w1,#2560"),
+        (0x0021F7BC, 4, 1, bytes.fromhex("3fc02171"), bytes.fromhex("3f002871"), "libXavcMp4 3840x2560 res code cmp w1,#2560"),
+        (0x0021FC90, 4, 1, bytes.fromhex("1fc02171"), bytes.fromhex("1f002871"), "libXavcMp4 hvcC level_idc cmp w0,#2560"),
+        (0x00226150, 4, 1, bytes.fromhex("010e8152"), bytes.fromhex("01408152"), "libXavcMp4::Rotate alt height mov w1,#2560"),
+        (0x00242BE8, 4, 1, bytes.fromhex("3fc02171"), bytes.fromhex("3f002871"), "libXavcMp4 Intra map key 1 cmp w1,#2560"),
+        (0x00242CD0, 4, 1, bytes.fromhex("1fc02171"), bytes.fromhex("1f002871"), "libXavcMp4 XAVC S-I CBG map key 2 cmp w0,#2560"),
+        (0x00242EB4, 4, 1, bytes.fromhex("5fc02171"), bytes.fromhex("5f002871"), "libXavcMp4 XAVC S-I CBG map key 3 cmp w2,#2560"),
     ]
     for off, ln, flg, oldb, newb, note in libmpr_spec:
         assert mpr[off : off + ln] == oldb, f"libmpr mismatch at {hex(off)} ({note})"
@@ -176,6 +183,9 @@ def build_tables():
             if off not in seen_av:
                 seen_av.add(off)
                 avcam_spec.append((off, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a"), label))
+        if fmt == 24 and (cfg_base + 0x56) not in seen_av:
+            seen_av.add(cfg_base + 0x56)
+            avcam_spec.append((cfg_base + 0x56, 2, 1, bytes.fromhex("3004"), bytes.fromhex("0005"), f"All-I {cfg_id} 2-core slice split 1072->1280"))
 
     for off, ln, flg, oldb, newb, note in avcam_spec:
         assert 0x380000 <= off and off + ln <= 0x3D0000, f"av-cam out of window {hex(off)}"
