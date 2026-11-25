@@ -54,7 +54,18 @@ def build():
         t1_records.append(make_record(fx_off, len(oldb), 1, oldb, newb))
 
     assert len(t1_records) == 103
-    print("[fx30og_v3] VERIFIED 100%: 2 guards + 101 av-cam.bin patches = 103 Table-1 records!")
+    # Extra FX30 AVC 23.98p 4:2:2 10-bit sites: +0x90 on 102600/01/03/04/07 + full key 102602 (desc #77 + prof)
+    extra_avc_offs = [
+        0x3AD378, 0x3AD678, 0x3AF878, 0x3AF978, 0x3B3778,  # +0x90 on 102600, 102601, 102603, 102604, 102607
+        0x395328, 0x3AF6EE, 0x3AF720, 0x3AF778,            # desc #77 (102602) + prof +0x06/+0x38/+0x90
+    ]
+    for fx_off in extra_avc_offs:
+        assert av[fx_off : fx_off + 2] == bytes.fromhex("7008"), f"Extra AVC mismatch at {hex(fx_off)}"
+        t1_records.append(make_record(fx_off, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a")))
+
+    N_T1 = len(t1_records)
+    assert N_T1 == 112
+    print(f"[fx30og_v3] VERIFIED 100%: 2 guards + {N_T1 - 2} av-cam.bin patches = {N_T1} Table-1 records!")
 
     t2_spec = [
         (0, 16, 0, ELF_HEADER_GUARD, b""),
@@ -64,8 +75,8 @@ def build():
         (0x2CB16E, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a")),
         (0x2E0BB0, 6, 0, bytes.fromhex("00000000000f"), b""),
         (0x2E0BB6, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a")),
-        (0x2E0BE8, 6, 0, bytes.fromhex("00000000000f"), b""),
         (0x2E0BEE, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a")),
+        (0x1164B0, 4, 1, bytes.fromhex("000e8152"), bytes.fromhex("00408152")),  # XavcsMovieWriter MP4 tkhd/avc1 height: mov w0, #2160 -> #2560
     ]
     t2_records = []
     for off, ln, flg, oldb, newb in t2_spec:
@@ -81,17 +92,17 @@ def build():
 
     t1_bytes = b"".join(t1_records)
     data[0x940 : 0x940 + len(t1_bytes)] = t1_bytes
-    data[0x940 + len(t1_bytes) : 0x940 + 132 * 40] = b"\x00" * ((132 - 103) * 40)
+    data[0x940 + len(t1_bytes) : 0x940 + 132 * 40] = b"\x00" * ((132 - N_T1) * 40)
 
     assert data[0x2A0 : 0x2A4] == b"132\x00"
-    data[0x2A0 : 0x2A4] = b"103\x00"
+    data[0x2A0 : 0x2A4] = f"{N_T1}\x00".encode()
 
     assert data[0x315C : 0x3160] == bytes.fromhex("82108052")
-    data[0x315C : 0x3160] = struct.pack("<I", 0x52800002 | (103 << 5))
+    data[0x315C : 0x3160] = struct.pack("<I", 0x52800002 | (N_T1 << 5))
     assert data[0x3444 : 0x3448] == bytes.fromhex("df1202f1")
-    data[0x3444 : 0x3448] = struct.pack("<I", 0xF10002DF | (103 << 10))
+    data[0x3444 : 0x3448] = struct.pack("<I", 0xF10002DF | (N_T1 << 10))
     assert data[0x3D60 : 0x3D64] == bytes.fromhex("9f1302f1")
-    data[0x3D60 : 0x3D64] = struct.pack("<I", 0xF100039F | (103 << 10))
+    data[0x3D60 : 0x3D64] = struct.pack("<I", 0xF100039F | (N_T1 << 10))
 
     assert data[0x2530 : 0x2534] == bytes.fromhex("e1171432")
     data[0x2530 : 0x2534] = bytes.fromhex("c100a052")
