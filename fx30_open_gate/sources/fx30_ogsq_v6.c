@@ -1,11 +1,11 @@
 /* SONY FX30 (FW 6.01 / IMX684) — COMPLETE OPEN GATE STEP 1 (v6 — 100% AUDITED)
  * Fixes ALL 7 gaps vs A7 IV / A7C II ogsq_v3:
- *   1. ALL 180x2 Mode 2 SGC fields (0xc79440 L / 0xc79ff8 R) INCLUDING +0x78c (5727 -> 3726).
+ *   1. ALL 180x2 Mode 2 SGC fields (0xc79440 L / 0xc79ff8 R) INCLUDING +0x78c (5727 -> 3726), +0x786=5623 stock, PDAF +14/+634.
  *   2. ALL 11 S-tables (S0..S10) + S2+0x0c across ALL 5 Col-1 video modes (M2, M4, M5, M6, M7).
- *   3. REAL S2 (0x00d10de4) and REAL S4 (0x00cb57c0..0x00cb5806) zeroed (406 -> 0).
- *   4. S5/S6 (2 -> 8) in BOTH Stream-0 Window table AND ImagerDrvParam (+0x62/+0x6a).
- *   5. TG Col 1 Nodes 3..8 & 10 synced with S9=47, S10=82, Node7=2 (+0x10e).
- *   6. LC Shading S7 (406 -> 0) & S8 (457 -> 51) synced in LC table & DrvParam (+0x15a).
+ *   3. REAL S2 (0x00d10de4) and REAL S4 (0x00cb57c0..0x00cb5806) set to CROPV=96 (406 -> 96).
+ *   4. S5/S6 kept stock (2) in Stream-0 Window & DrvParam (+0x62/+0x6a) to preserve OB/Bayer alignment.
+ *   5. TG Col 1 Nodes 3..8 & 10 synced with S9=48, S10=82, Node7=2 (+0x10e).
+ *   6. LC Shading S7 (406 -> 96) & S8 (457 -> 147) synced in LC table & DrvParam (+0x15a).
  *   7. Vertical Sampling Ratio 27/32 (0x1b, 0x20) + derived readout timing (+0xbc/+0xea/+0xec/+0x150).
  * Volatile RAM only (no NAND writes). Battery pull (10s) restores 100% stock.
  */

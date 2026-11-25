@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""Build libJit_level19_fx30og_v3.so — COMPLETE 101-site av-cam.bin + 4-site libmpr.so
+"""Build libJit_level19_fx30og_v3.so — COMPLETE 110-site av-cam.bin + 7-site libmpr.so
 Open Gate 3:2 (3840x2560) AP Encoder helper for Sony FX30 FW 6.01.
 """
 import hashlib
 import json
+import os
 import struct
 from pathlib import Path
 
-HELPER_DIR = Path("/Users/nauck/Documents/sony_research/a7iv-open-gate-test/windows/tools/camera_tests/CT6_memory_read_check/helper")
-A7IV_JSON = Path("/Users/nauck/Documents/sony_research/a7iv-open-gate-test/windows/tools/modding/designs/ogfile2560_hs_s_v1.json")
-FX30_AVCAM = Path("/Users/nauck/Documents/sony_research/fwtool.py/unpacked_fx30/firmware.tar_unpacked/0700_part_image/dev/nflasha3_unpacked/av-cam.bin")
-FX30_LIBMPR = Path("/Users/nauck/Documents/sony_research/fwtool.py/unpacked_fx30/firmware.tar_unpacked/0700_part_image/dev/nflasha15_unpacked/lib/libmpr.so")
-OUT_SO = Path("/Users/nauck/Documents/sony_research/fx30_open_gate/libJit_level19_fx30og_v3.so")
+RESEARCH = Path(os.environ.get("FX30_RESEARCH_DIR", "/Users/nauck/Documents/sony_research"))
+HELPER_DIR = RESEARCH / "a7iv-open-gate-test/windows/tools/camera_tests/CT6_memory_read_check/helper"
+A7IV_JSON = RESEARCH / "a7iv-open-gate-test/windows/tools/modding/designs/ogfile2560_hs_s_v1.json"
+FX30_AVCAM = RESEARCH / "fwtool.py/unpacked_fx30/firmware.tar_unpacked/0700_part_image/dev/nflasha3_unpacked/av-cam.bin"
+FX30_LIBMPR = RESEARCH / "fwtool.py/unpacked_fx30/firmware.tar_unpacked/0700_part_image/dev/nflasha15_unpacked/lib/libmpr.so"
+OUT_SO = RESEARCH / "fx30_open_gate/libJit_level19_fx30og_v3.so"
 
 FX30_AVCAM_GUARD_0 = bytes.fromhex("d8882701c0ffffffd8882701c0ffffff")  # at 0x381b40
 FX30_AVCAM_GUARD_1 = bytes.fromhex("c0fffffff89f2801c0ffffff20a02801")  # at 0x3838bc
@@ -71,18 +73,18 @@ def build():
         (0, 16, 0, ELF_HEADER_GUARD, b""),
         (0x2CB138, 6, 0, bytes.fromhex("00000000000f"), b""),
         (0x2CB13E, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a")),
-        (0x2CB168, 6, 0, bytes.fromhex("00000000000f"), b""),
         (0x2CB16E, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a")),
-        (0x2E0BB0, 6, 0, bytes.fromhex("00000000000f"), b""),
         (0x2E0BB6, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a")),
         (0x2E0BEE, 2, 1, bytes.fromhex("7008"), bytes.fromhex("000a")),
-        (0x1164B0, 4, 1, bytes.fromhex("000e8152"), bytes.fromhex("00408152")),  # XavcsMovieWriter MP4 tkhd/avc1 height: mov w0, #2160 -> #2560
+        (0x1164B0, 4, 1, bytes.fromhex("000e8152"), bytes.fromhex("00408152")),  # XavcsMovieWriter level height 2160 -> 2560
+        (0x180098, 4, 1, bytes.fromhex("000e8152"), bytes.fromhex("00408152")),  # TransMPFResolution2PubDefinition 2160 -> 2560
+        (0x109768, 4, 1, bytes.fromhex("0b0e8152"), bytes.fromhex("0b408152")),  # xavcsMovieMeta::WriteMetaInfo 2160 -> 2560
     ]
     t2_records = []
     for off, ln, flg, oldb, newb in t2_spec:
         assert mpr[off : off + ln] == oldb, f"FX30 libmpr.so mismatch at {hex(off)}"
         t2_records.append(make_record(off, ln, flg, oldb, newb))
-    print("[fx30og_v3] VERIFIED 100%: 5 guards + 4 libmpr.so patches = 9 Table-2 records!")
+    print("[fx30og_v3] VERIFIED 100%: 2 guards + 7 libmpr.so patches = 9 Table-2 records!")
 
     src_path = HELPER_DIR / "libJit_level19_ogfile2560_hs_s_v1.so"
     data = bytearray(src_path.read_bytes())

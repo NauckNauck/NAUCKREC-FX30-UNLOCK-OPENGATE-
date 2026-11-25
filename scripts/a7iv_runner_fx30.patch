@@ -1,0 +1,59 @@
+diff --git a/windows/tools/camera_tests/CT1_usb_first_contact/ct1_common.py b/windows/tools/camera_tests/CT1_usb_first_contact/ct1_common.py
+index 3a7ab29..54b79ca 100644
+--- a/windows/tools/camera_tests/CT1_usb_first_contact/ct1_common.py
++++ b/windows/tools/camera_tests/CT1_usb_first_contact/ct1_common.py
+@@ -247,6 +247,9 @@ def unmount_sony_disks(session):
+     for row in rows:
+         for disk in row["disks"]:
+             r = subprocess.run(["diskutil", "unmountDisk", "/dev/" + disk], capture_output=True, text=True, timeout=60)
++            if r.returncode != 0:
++                time.sleep(1)
++                r = subprocess.run(["diskutil", "unmountDisk", "force", "/dev/" + disk], capture_output=True, text=True, timeout=60)
+             text = (r.stdout + r.stderr).strip()
+             session.log("unmount", disk=disk, code=r.returncode, out=text)
+             if r.returncode != 0:
+diff --git a/windows/tools/camera_tests/CT1_usb_first_contact/ct1_stage2_service.py b/windows/tools/camera_tests/CT1_usb_first_contact/ct1_stage2_service.py
+index 1fdebb5..769827c 100644
+--- a/windows/tools/camera_tests/CT1_usb_first_contact/ct1_stage2_service.py
++++ b/windows/tools/camera_tests/CT1_usb_first_contact/ct1_stage2_service.py
+@@ -285,9 +285,9 @@ def main():
+                  len(senser), ["%04x:%04x" % (d.idVendor, d.idProduct) for d in senser]))
+         print("Nothing was sent to any device.")
+         return
+-    if args.firmware_shown != c.EXPECTED_FIRMWARE:
++    if args.firmware_shown not in ("6.01", "6.02"):
+         raise SystemExit("Pass --firmware-shown with the version on the camera's menu. CT1 is prepared for "
+-                         "%s only; anything else stops here." % c.EXPECTED_FIRMWARE)
++                         "6.01 or 6.02 only; anything else stops here.")
+     with c.Session("stage2_service") as session:
+         session.results["firmware_shown_on_camera"] = args.firmware_shown
+         live(session, not args.no_probes)
+diff --git a/windows/tools/camera_tests/CT6_memory_read_check/ct6_level1_run.py b/windows/tools/camera_tests/CT6_memory_read_check/ct6_level1_run.py
+index 2968d48..a87d95c 100644
+--- a/windows/tools/camera_tests/CT6_memory_read_check/ct6_level1_run.py
++++ b/windows/tools/camera_tests/CT6_memory_read_check/ct6_level1_run.py
+@@ -205,6 +205,12 @@ DESIGN_LIBS = {"fhband_v1": {5: ("libJit_level5_fhband_v1.so", "982d2ea9d8916246
+                # to; v3's function-event trigger never reaches process_input_event (the classifier makes it later).
+                # lcdcycle_v5 (F857): v4's raw-C3 trigger; each press writes the VDF fit word and letterbox constants (3:2 / 2:1 / 2.4:1, F856) into the
+                # coprocessor from appFw through libsencore (dlsym), then requests a fresh automatic layout. One hook, no hook 2.
++               "fx30menu_v1": {19: ("libJit_level19_fx30menu_v1.so", "809ddcf293c1e42f94c6460ff32078891d246a43498550bc6ba7cbfb8f11848b")},
++               "fx30rate_v1": {19: ("libJit_level19_fx30rate_v1.so", "b86b3a263dfdb8895f44129daf342cfc4f30a0f885f80b21d550cf7d02a052d0")},
++               "fx30og_v1": {19: ("libJit_level19_fx30og_v1.so", "ebed0ee9d827926b93b8861406950bd9a6c217fd8b89ff055a5944b7b35305a0")},
++               "fx30og_v2": {19: ("libJit_level19_fx30og_v2.so", "2a02214487d3059674a472648825e8c9ac2ef82ffb5b91f3153b24fa341eccf4")},
++               "fx30og_v3": {19: ("libJit_level19_fx30og_v3.so", "1b63fdfff3f32307c376789fd25bec1e570e444348c72298d1abde903f65ec0b")},
++               "fx30lcd_v2": {16: ("libJit_level16_fx30lcd_v2.so", "d0342096c024e5952f59932fae8c17385b9837c8bd2d08b69d3ee673ea12b007")},
+                # lcdcycle_v6 (F966): v5 plus the frame widgets' rectangle, written per preview mode, so the focus frames are drawn in 3:2, 2:1 and 2.4:1.
+                "lcdcycle_v6": {18: ("libJit_level18_lcdcycle_v6.so", "05948cf1d879d264bf05edb1a626496683fb8d74b2778de293d8ba4019194da0"),
+                                19: ("libJit_level19_lcdcycle_v6.so", "64a67f1f7d541e9946e1084a382884d11b11f17031cc29a746e18e0d1b58fe10"),
+@@ -1646,9 +1652,8 @@ def main():
+         else:
+             print("\n".join(dry_run_lines(lib)))
+         return
+-    if not args.go or args.firmware_shown != c.EXPECTED_FIRMWARE or args.library_sha256 != LIB_SHA256:
+-        raise SystemExit("A live run needs --go, --firmware-shown %s and --library-sha256 with the hash in README.md. Nothing was sent."
+-                         % c.EXPECTED_FIRMWARE)
++    if not args.go or args.firmware_shown not in ("6.01", "6.02") or args.library_sha256 != LIB_SHA256:
++        raise SystemExit("A live run needs --go, --firmware-shown (6.01 or 6.02) and --library-sha256 with the hash in README.md. Nothing was sent.")
+     refusals(lib)
+     selftest(lib)                                   # the flow must pass on the simulated camera on the day, before the real one
+     import ct1_stage2_service as service

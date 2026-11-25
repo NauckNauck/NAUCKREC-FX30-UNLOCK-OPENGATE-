@@ -1,4 +1,4 @@
-/* SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + LCD 3:2 PREVIEW (8 u32 sites) */
+/* SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + LCD 3:2 PREVIEW (10 u32 sites) */
 typedef unsigned long u64; typedef long i64; typedef unsigned int u32; typedef unsigned short u16; typedef unsigned char u8;
 extern u64 cam_dmm_alloc(u32 size, u32 *handle) __asm__("_Z9dmm_allocjPj");
 extern u64 cam_dmm_free(u32 handle) __asm__("_Z8dmm_freej");

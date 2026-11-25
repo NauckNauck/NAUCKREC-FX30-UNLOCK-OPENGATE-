@@ -10,12 +10,13 @@
 Every single patch's oldv is asserted byte-for-byte against fx30_cp_dump.bin!
 """
 import json
+import os
 import struct
 from pathlib import Path
 
-REPO = Path("/Users/nauck/Documents/sony_research/NAUCKREC-FX30-UNLOCK-OPENGATE-")
+REPO = Path(__file__).resolve().parents[1]
 SRC_DIR = REPO / "fx30_open_gate" / "sources"
-DUMP_PATH = Path("/Users/nauck/Documents/deepseek-harness/default-workspace/sony_research/fx30_dump_helper/fx30_cp_dump.bin")
+DUMP_PATH = Path(os.environ.get("FX30_CP_DUMP", "/Users/nauck/Documents/deepseek-harness/default-workspace/sony_research/fx30_dump_helper/fx30_cp_dump.bin"))
 MODE2_JSON = REPO / "docs" / "fx30_mode2_180_fields_layout.json"
 
 BASE = 0x000C0000
@@ -168,12 +169,12 @@ def generate_ogsq_v6():
     lines = [
         "/* SONY FX30 (FW 6.01 / IMX684) — COMPLETE OPEN GATE STEP 1 (v6 — 100% AUDITED)",
         " * Fixes ALL 7 gaps vs A7 IV / A7C II ogsq_v3:",
-        " *   1. ALL 180x2 Mode 2 SGC fields (0xc79440 L / 0xc79ff8 R) INCLUDING +0x78c (5727 -> 3726).",
+        " *   1. ALL 180x2 Mode 2 SGC fields (0xc79440 L / 0xc79ff8 R) INCLUDING +0x78c (5727 -> 3726), +0x786=5623 stock, PDAF +14/+634.",
         " *   2. ALL 11 S-tables (S0..S10) + S2+0x0c across ALL 5 Col-1 video modes (M2, M4, M5, M6, M7).",
-        " *   3. REAL S2 (0x00d10de4) and REAL S4 (0x00cb57c0..0x00cb5806) zeroed (406 -> 0).",
-        " *   4. S5/S6 (2 -> 8) in BOTH Stream-0 Window table AND ImagerDrvParam (+0x62/+0x6a).",
-        " *   5. TG Col 1 Nodes 3..8 & 10 synced with S9=47, S10=82, Node7=2 (+0x10e).",
-        " *   6. LC Shading S7 (406 -> 0) & S8 (457 -> 51) synced in LC table & DrvParam (+0x15a).",
+        " *   3. REAL S2 (0x00d10de4) and REAL S4 (0x00cb57c0..0x00cb5806) set to CROPV=96 (406 -> 96).",
+        " *   4. S5/S6 kept stock (2) in Stream-0 Window & DrvParam (+0x62/+0x6a) to preserve OB/Bayer alignment.",
+        " *   5. TG Col 1 Nodes 3..8 & 10 synced with S9=48, S10=82, Node7=2 (+0x10e).",
+        " *   6. LC Shading S7 (406 -> 96) & S8 (457 -> 147) synced in LC table & DrvParam (+0x15a).",
         " *   7. Vertical Sampling Ratio 27/32 (0x1b, 0x20) + derived readout timing (+0xbc/+0xea/+0xec/+0x150).",
         " * Volatile RAM only (no NAND writes). Battery pull (10s) restores 100% stock.",
         " */",
@@ -465,7 +466,7 @@ if __name__ == "__main__":
     emit_u32_helper(
         "fx30_outsz_lcd_v1.c",
         "ol",
-        "SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + LCD 3:2 PREVIEW (8 u32 sites)",
+        "SONY FX30 (FW 6.01) — ISP OUTSZ 3840x2560 + LCD 3:2 PREVIEW (10 u32 sites)",
         [
             (0x0155D43C, 0x08700F00, 0x0A000F00, "ISP outsz alt: 3840x2160 -> 3840x2560"),
             (0x0155D444, 0x08700F00, 0x0A000F00, "ISP outsz: 3840x2160 -> 3840x2560"),

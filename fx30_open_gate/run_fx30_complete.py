@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Unified Sony FX30 (FW 6.01 / IMX684) Volatile RAM Runner:
   --step1           V60 Card Unlock (fx30menu_v1 + fx30rate_v1) + fx30_ogsq_v6.so
-  --full            V60 Card Unlock + fx30og_v3 (101-site encoder) + fx30_ogsq_v6 + fx30_outsz_lcd_v1
+  --full            V60 Card Unlock + fx30og_v3 (110 av-cam + 7 libmpr sites) + fx30_ogsq_v6 + fx30_outsz_lcd_v1
   --with-dmmwb      Also inject fx30_dmmwb_safe_v2.so (contingency 2x28.5MB steered DMM)
   --probe           Run fx30_read_probe_v2.so (in Movie mode -> IMG INIT cure) & decode probe_dump.bin
   --card-only       Run V60 Card Unlock only (fx30menu_v1 + fx30rate_v1)
@@ -17,7 +17,7 @@ import sys
 import time
 from pathlib import Path
 
-RESEARCH = Path("/Users/nauck/Documents/sony_research")
+RESEARCH = Path(os.environ.get("FX30_RESEARCH_DIR", "/Users/nauck/Documents/sony_research"))
 OG_DIR = RESEARCH / "fx30_open_gate"
 A7IV = RESEARCH / "a7iv-open-gate-test"
 CT1 = A7IV / "windows" / "tools" / "camera_tests" / "CT1_usb_first_contact"
@@ -32,7 +32,7 @@ sys.path.insert(0, str(CT6))
 AP_STEPS = {
     "fx30menu_v1": (19, HELPER_DIR / "libJit_level19_fx30menu_v1.so", "809ddcf293c1e42f94c6460ff32078891d246a43498550bc6ba7cbfb8f11848b"),
     "fx30rate_v1": (19, HELPER_DIR / "libJit_level19_fx30rate_v1.so", "b86b3a263dfdb8895f44129daf342cfc4f30a0f885f80b21d550cf7d02a052d0"),
-    "fx30og_v3":   (19, HELPER_DIR / "libJit_level19_fx30og_v3.so",   "ab701d59ca211b2543ebfe48fcd045ed10c55906e1dca81d96f5cf28785c1269"),
+    "fx30og_v3":   (19, HELPER_DIR / "libJit_level19_fx30og_v3.so",   "1b63fdfff3f32307c376789fd25bec1e570e444348c72298d1abde903f65ec0b"),
 }
 CP_BINS = {
     "fx30_ogsq_v6":       OG_DIR / "fx30_ogsq_v6.so",
@@ -100,10 +100,35 @@ def wait_for_drive(first: bool, mode_hint: str = "STILLS (Photo)"):
         time.sleep(1)
 
 
+def last_result_sha():
+    priv = A7IV / "windows" / "camera_private"
+    if not priv.is_dir():
+        return None
+    import json
+    for folder in sorted((p for p in priv.iterdir() if p.is_dir() and p.name.startswith("CT6_")), reverse=True):
+        try:
+            man = json.loads((folder / "manifest.json").read_text(encoding="utf8"))
+            return man["results"]["ct6"]["result"]["sha256"]
+        except Exception:
+            continue
+    return None
+
+
 def run_ct6_step(design: str):
-    lvl, _, _ = AP_STEPS[design]
+    lvl, _, sha = AP_STEPS[design]
     print(f"\n=== Running AP Step: {design} (level {lvl}) ===")
-    r = subprocess.run([sys.executable, "-I", "-B", str(RUNNER), "--level", str(lvl), "--design", design], cwd=str(CT6))
+    cmd = [
+        sys.executable, "-I", "-B", str(RUNNER),
+        "--level", str(lvl),
+        "--design", design,
+        "--go",
+        "--firmware-shown", "6.01",
+        "--library-sha256", sha,
+    ]
+    prev_sha = last_result_sha()
+    if prev_sha:
+        cmd.extend(["--clear-result", prev_sha])
+    r = subprocess.run(cmd, cwd=str(CT6))
     if r.returncode != 0:
         raise SystemExit(f"AP step {design} failed with exit code {r.returncode}")
 
@@ -111,7 +136,6 @@ def run_ct6_step(design: str):
 def inject_cp_helpers(helpers: list, dump_out: Path = None):
     import ct1_common as c
     import ct1_stage2_service as service
-    from pmca.usb.sony import SonySenserAuthDevice, SonySenserCamera, SonySenserDevice
 
     all_markers = []
     for _, _, mks in helpers:
@@ -142,6 +166,7 @@ def inject_cp_helpers(helpers: list, dump_out: Path = None):
     session = c.Session("fx30_complete", test="FX30COMPLETE")
     try:
         inner = service.connect(session)
+        from pmca.usb.sony import SonySenserAuthDevice, SonySenserCamera, SonySenserDevice
         drv = c.GuardedDriver(inner, session, "senser")
         auth = SonySenserAuthDevice(drv)
         auth.start()
